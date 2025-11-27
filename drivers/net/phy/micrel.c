@@ -969,28 +969,36 @@ static int ksz9131_of_load_skew_values(struct phy_device *phydev,
 static int ksz9131_config_rgmii_delay(struct phy_device *phydev)
 {
 	u16 rxcdll_val, txcdll_val;
-	int ret;
+	int ret, val;
 
 	switch (phydev->interface) {
 	case PHY_INTERFACE_MODE_RGMII:
 		rxcdll_val = KSZ9131RN_DLL_DISABLE_DELAY;
 		txcdll_val = KSZ9131RN_DLL_DISABLE_DELAY;
+		printk(KERN_ERR "#### PHY_INTERFACE_MODE_RGMII\n");
 		break;
 	case PHY_INTERFACE_MODE_RGMII_ID:
 		rxcdll_val = KSZ9131RN_DLL_ENABLE_DELAY;
 		txcdll_val = KSZ9131RN_DLL_ENABLE_DELAY;
+		printk(KERN_ERR "#### PHY_INTERFACE_MODE_RGMII_ID\n");
 		break;
 	case PHY_INTERFACE_MODE_RGMII_RXID:
 		rxcdll_val = KSZ9131RN_DLL_ENABLE_DELAY;
 		txcdll_val = KSZ9131RN_DLL_DISABLE_DELAY;
+		printk(KERN_ERR "#### PHY_INTERFACE_MODE_RGMII_RXID\n");
 		break;
 	case PHY_INTERFACE_MODE_RGMII_TXID:
 		rxcdll_val = KSZ9131RN_DLL_DISABLE_DELAY;
 		txcdll_val = KSZ9131RN_DLL_ENABLE_DELAY;
+		printk(KERN_ERR "#### PHY_INTERFACE_MODE_RGMII_TXID\n");
 		break;
 	default:
+		printk(KERN_ERR"#### COULD NOT SET PHY_INTERFACE_MODE\n");
 		return 0;
 	}
+	
+	val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_RXC_DLL_CTRL);
+	printk(KERN_ERR"#### KSZ9131RN_RXC_DLL_CTRL: %x\n",val);
 
 	ret = phy_modify_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG,
 			     KSZ9131RN_RXC_DLL_CTRL, KSZ9131RN_DLL_CTRL_BYPASS,
@@ -998,9 +1006,37 @@ static int ksz9131_config_rgmii_delay(struct phy_device *phydev)
 	if (ret < 0)
 		return ret;
 
-	return phy_modify_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG,
+	val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_TXC_DLL_CTRL);
+	printk(KERN_ERR"#### KSZ9131RN_TXC_DLL_CTRL: %x\n",val);
+	
+	ret = phy_modify_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG,
 			      KSZ9131RN_TXC_DLL_CTRL, KSZ9131RN_DLL_CTRL_BYPASS,
 			      txcdll_val);
+			      
+	val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_TXC_DLL_CTRL);
+	printk(KERN_ERR"#### KSZ9131RN_TXC_DLL_CTRL: %x\n",val);
+	
+	return ret;
+}
+
+/* Silicon Errata DS80000693B
+ *
+ * When LEDs are configured in Individual Mode, LED1 is ON in a no-link
+ * condition. Workaround is to set register 0x1e, bit 9, this way LED1 behaves
+ * according to the datasheet (off if there is no link).
+ */
+static int ksz9131_led_errata(struct phy_device *phydev)
+{
+	int reg;
+
+	reg = phy_read_mmd(phydev, 2, 0);
+	if (reg < 0)
+		return reg;
+
+	if (!(reg & BIT(4)))
+		return 0;
+
+	return phy_set_bits(phydev, 0x1e, BIT(9));
 }
 
 static int ksz9131_config_init(struct phy_device *phydev)
@@ -1055,6 +1091,10 @@ static int ksz9131_config_init(struct phy_device *phydev)
 	ret = ksz9131_of_load_skew_values(phydev, of_node,
 					  MII_KSZ9031RN_TX_DATA_PAD_SKEW, 4,
 					  tx_data_skews, 4);
+	if (ret < 0)
+		return ret;
+
+	ret = ksz9131_led_errata(phydev);
 	if (ret < 0)
 		return ret;
 
@@ -1669,6 +1709,7 @@ static struct phy_driver ksphy_driver[] = {
 	.phy_id_mask	= MICREL_PHY_ID_MASK,
 	/* PHY_BASIC_FEATURES */
 	.config_init	= ksz8061_config_init,
+	.soft_reset	= genphy_soft_reset,
 	.config_intr	= kszphy_config_intr,
 	.handle_interrupt = kszphy_handle_interrupt,
 	.suspend	= genphy_suspend,
@@ -1728,6 +1769,7 @@ static struct phy_driver ksphy_driver[] = {
 	/* PHY_GBIT_FEATURES */
 	.driver_data	= &ksz9021_type,
 	.probe		= kszphy_probe,
+	.soft_reset	= genphy_soft_reset,
 	.config_init	= ksz9131_config_init,
 	.config_intr	= kszphy_config_intr,
 	.handle_interrupt = kszphy_handle_interrupt,
@@ -1796,8 +1838,11 @@ static struct mdio_device_id __maybe_unused micrel_tbl[] = {
 	{ PHY_ID_KSZ8081, MICREL_PHY_ID_MASK },
 	{ PHY_ID_KSZ8873MLL, MICREL_PHY_ID_MASK },
 	{ PHY_ID_KSZ886X, MICREL_PHY_ID_MASK },
+	{ PHY_ID_KSZ9477, MICREL_PHY_ID_MASK },
 	{ PHY_ID_LAN8814, MICREL_PHY_ID_MASK },
 	{ }
 };
 
 MODULE_DEVICE_TABLE(mdio, micrel_tbl);
+
+

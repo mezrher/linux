@@ -76,7 +76,7 @@
 				 * disable this node by uncommenting the
 				 * following line:
 				 */
-				 //status = "disabled";
+				 status = "disabled";
 			};
 		};
 	};
