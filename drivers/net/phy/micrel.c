@@ -969,7 +969,8 @@ static int ksz9131_of_load_skew_values(struct phy_device *phydev,
 static int ksz9131_config_rgmii_delay(struct phy_device *phydev)
 {
 	u16 rxcdll_val, txcdll_val;
-	int ret, val;
+	int ret;
+	//int val;
 
 	switch (phydev->interface) {
 	case PHY_INTERFACE_MODE_RGMII:
@@ -997,8 +998,8 @@ static int ksz9131_config_rgmii_delay(struct phy_device *phydev)
 		return 0;
 	}
 	
-	val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_RXC_DLL_CTRL);
-	printk(KERN_ERR"#### KSZ9131RN_RXC_DLL_CTRL: %x\n",val);
+	//val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_RXC_DLL_CTRL);
+	//printk(KERN_ERR"#### KSZ9131RN_RXC_DLL_CTRL: %x\n",val);
 
 	ret = phy_modify_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG,
 			     KSZ9131RN_RXC_DLL_CTRL, KSZ9131RN_DLL_CTRL_BYPASS,
@@ -1006,17 +1007,17 @@ static int ksz9131_config_rgmii_delay(struct phy_device *phydev)
 	if (ret < 0)
 		return ret;
 
-	val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_TXC_DLL_CTRL);
-	printk(KERN_ERR"#### KSZ9131RN_TXC_DLL_CTRL: %x\n",val);
+	//val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_TXC_DLL_CTRL);
+	//printk(KERN_ERR"#### KSZ9131RN_TXC_DLL_CTRL: %x\n",val);
 	
-	ret = phy_modify_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG,
+	return phy_modify_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG,
 			      KSZ9131RN_TXC_DLL_CTRL, KSZ9131RN_DLL_CTRL_BYPASS,
 			      txcdll_val);
 			      
-	val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_TXC_DLL_CTRL);
-	printk(KERN_ERR"#### KSZ9131RN_TXC_DLL_CTRL: %x\n",val);
+	//val = phy_read_mmd(phydev, KSZ9131RN_MMD_COMMON_CTRL_REG, KSZ9131RN_TXC_DLL_CTRL);
+	//printk(KERN_ERR"#### KSZ9131RN_TXC_DLL_CTRL: %x\n",val);
 	
-	return ret;
+	//return ret;
 }
 
 /* Silicon Errata DS80000693B

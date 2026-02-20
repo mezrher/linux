@@ -21,7 +21,7 @@
  *
  * Copyright (C) 2010-2011 Freescale Semiconductor, Inc.
  */
-
+//@Mezrher
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -2124,6 +2124,20 @@ static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	int ret;
+	//unsigned long rate;
+	//@Mezrher 
+	/*
+			unsigned long rate;
+
+			if (fep->clk_enet_out) {
+    			rate = clk_get_rate(fep->clk_enet_out);
+    			printf("ENET OUT clock rate = %lu Hz\n", rate);
+						} 
+			else {
+    				printf("ENET OUT clock is NULL\n");
+			     }
+	
+	*/
 
 	if (enable) {
 		ret = clk_prepare_enable(fep->clk_enet_out);
@@ -4027,6 +4041,10 @@ fec_probe(struct platform_device *pdev)
 	if (IS_ERR(fep->clk_ref))
 		fep->clk_ref = NULL;
 	fep->clk_ref_rate = clk_get_rate(fep->clk_ref);
+	
+	//@Mezrher
+	//debug("FEC: ENET clk rate = %lu\n", clk_get_rate(fep->clk_ref));
+	//printf("enet_clk_ref clk_ref_rate = %lu Hz\n", fep->clk_ref_rate->rate);
 
 	/* clk_2x_txclk is optional, depends on board */
 	if (fep->rgmii_txc_dly || fep->rgmii_rxc_dly) {
@@ -4279,7 +4297,9 @@ static int __maybe_unused fec_suspend(struct device *dev)
 	/* SOC supply clock to phy, when clock is disabled, phy link down
 	 * SOC control phy regulator, when regulator is disabled, phy link down
 	 */
+	 //@Mezrher to check 
 	if (fep->clk_enet_out || fep->reg_phy)
+		//debug("@Mezrher fec_main.c phy link due clock or regulator disable \n");
 		fep->link = 0;
 
 	return 0;

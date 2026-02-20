@@ -604,6 +604,8 @@
 					status = "disabled";
 				};
 
+
+
 				easrc: easrc@300c0000 {
 					compatible = "fsl,imx8mn-easrc";
 					reg = <0x300c0000 0x10000>;
